@@ -102,7 +102,7 @@ for (i in 1:n_sims){
 # ptable[i,8]<-ifelse(any(ptable[i,1:7]<.05)==TRUE,1,0)
 # ptable[i,9]<-ifelse(any(ptable[i,1:7]<.007)==TRUE,1,0)
 
-m1 <- lmer(value ~ -1 + ( 1 | Subject ) + (1 | time:difficulty), data = mylongdata, REML= FALSE)
+m1 <- lmer(value ~ -1 + ( 1 | Group ), data = mylongdata, REML= FALSE)
 m2 <- update(m1, .~. + time)
 m3 <- update(m2, .~. + difficulty)
 m4 <- update(m3, .~. + Group)
@@ -129,18 +129,18 @@ mypf<-round(ptable,digits=2) #get rid of extraneous digits; This doesn't always 
 if (n_sims<21){
     grid.table(mypf) #doing gridtable gets v slow with more than 20 rows
 }
-percent05<-100*(sum(ptable[,8])/n_sims) 
-percentBon<-100*(sum(ptable[,9])/n_sims)
-print(paste('% ANOVAs with one effect or interaction < .05 = ',percent05))
-print(paste('% ANOVAs with one effect or interaction < .007 = ',percentBon))
-print(paste('% mixed with one effect or interaction < .05 = ', 100*(sum(mxm_dt[,8])/n_sims)))
-print(paste('% mixed with one effect or interaction < .007 = ', 100*(sum(mxm_dt[,9])/n_sims)))
+## percent05<-100*(sum(ptable[,8])/n_sims) 
+## percentBon<-100*(sum(ptable[,9])/n_sims)
+## print(paste('% ANOVAs with one effect or interaction < .05 = ',percent05))
+## print(paste('% ANOVAs with one effect or interaction < .007 = ',percentBon))
+## print(paste('% mixed with one effect or interaction < .05 = ', 100*(sum(mxm_dt[,8])/n_sims)))
+## print(paste('% mixed with one effect or interaction < .007 = ', 100*(sum(mxm_dt[,9])/n_sims)))
 
 # For an explanation of the issues raised by this exercise see:
 # http://deevybee.blogspot.co.uk/2013/06/interpreting-unexpected-significant.html
 
-write.csv(ptable, "anova_dt.csv")
-write.csv(mxm_dt, "mxm_dt.csv")
+write.csv(ptable, "/users/mje/anova_sim/repro17/anova_mxm_sim/anova_dt.csv")
+write.csv(mxm_dt, "/users/mje/anova_sim/repro17/anova_mxm_sim/mxm_dt.csv")
 
 # This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. https://creativecommons.org/licenses/by-nc-sa/4.0/
 #   
