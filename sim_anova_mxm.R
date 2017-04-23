@@ -33,7 +33,7 @@ set.seed(183)
 myM <- 0 # Mean score for all variables in the sample - we're using z scores for simplicity
 mySD <- 1 #
 myN <-30 #set sample size per group (You can vary this to see the effect)
-n_sims <- 10000 # Specify number of simulated datasets
+n_sims <- 100000 # Specify number of simulated datasets
 # We'll start with simulating 20 datasets, but can later update this number
 ptable=matrix(rep(NA,(n_sims*9)),nrow=n_sims) #initialising a matrix that will hold p values in each run
 table_names <- c("A", "B", "C", "AB", "AC", "BC", "ABC", "anysig", "Bonfsig")
@@ -58,7 +58,7 @@ for (i in 1:n_sims){
     #----------------------------------------------------------------------------------------
     # Save your simulated data as tab-separated text
     #----------------------------------------------------------------------------------------
-    write.table(mydata, "simulated_data.txt", sep="\t") 
+    write.table(mydata, "/users/mje/anova_sim/repro17/mixed_model_eeg_simulation/data/simulated_data.txt", sep=",") 
     # You could use saved data if you want to double-check against output of Anova from another package
     # But see comments in script 2: advisable to comment out this line once you've got the idea
     # And note that on each run, the file will be overwritten with latest output
@@ -139,8 +139,8 @@ if (n_sims<21){
 # For an explanation of the issues raised by this exercise see:
 # http://deevybee.blogspot.co.uk/2013/06/interpreting-unexpected-significant.html
 
-write.csv(ptable, "/users/mje/anova_sim/repro17/anova_mxm_sim/anova_dt.csv")
-write.csv(mxm_dt, "/users/mje/anova_sim/repro17/anova_mxm_sim/mxm_dt.csv")
+write.csv(ptable, "/users/mje/anova_sim/repro17/mixed_model_eeg_simulation/data/anova_dt.csv")
+write.csv(mxm_dt, "/users/mje/anova_sim/repro17/mixed_model_eeg_simulation/data/mxm_dt.csv")
 
 # This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. https://creativecommons.org/licenses/by-nc-sa/4.0/
 #   
