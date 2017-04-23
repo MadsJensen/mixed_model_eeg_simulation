@@ -102,7 +102,7 @@ for (i in 1:n_sims){
 # ptable[i,8]<-ifelse(any(ptable[i,1:7]<.05)==TRUE,1,0)
 # ptable[i,9]<-ifelse(any(ptable[i,1:7]<.007)==TRUE,1,0)
 
-m1 <- lmer(value ~ -1 + ( 1 | Group ), data = mylongdata, REML= FALSE)
+m1 <- lmer(value ~ -1 + ( 1 | Subject ), data = mylongdata, REML= FALSE)
 m2 <- update(m1, .~. + time)
 m3 <- update(m2, .~. + difficulty)
 m4 <- update(m3, .~. + Group)
