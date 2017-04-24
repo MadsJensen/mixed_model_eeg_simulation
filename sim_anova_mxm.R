@@ -33,17 +33,17 @@ set.seed(183)
 myM <- 0 # Mean score for all variables in the sample - we're using z scores for simplicity
 mySD <- 1 #
 myN <-30 #set sample size per group (You can vary this to see the effect)
-n_sims <- 100000 # Specify number of simulated datasets
+n_sims <- 100 # Specify number of simulated datasets
 # We'll start with simulating 20 datasets, but can later update this number
-ptable=matrix(rep(NA,(n_sims*9)),nrow=n_sims) #initialising a matrix that will hold p values in each run
-table_names <- c("A", "B", "C", "AB", "AC", "BC", "ABC", "anysig", "Bonfsig")
+ptable=matrix(rep(NA, (n_sims*10)), nrow=n_sims) #initialising a matrix that will hold p values in each run
+table_names <- c("A", "B", "C", "AB", "AC", "BC", "ABC", "anysig", "Bonfsig", "fdr")
 ## data.frame for Mixed models
 mxm_dt <- as.data.frame(matrix(0, ncol = length(table_names) , nrow = n_sims))
 names(mxm_dt) <- table_names
 
 # There are 7 p-values: 3 main effects, 3 2-way interactions, and 1 3-way interaction
 # The last two columns will denote if any p-value in a run is <.05, or < .007 (Bonferroni corrected)
-colnames(ptable)<- c("A","B","C","AB","AC","BC","ABC","anysig","Bonfsig")
+colnames(ptable) <- table_names
 
 for (i in 1:n_sims){
     #----------------------------------------------------------------------------------------
@@ -55,30 +55,25 @@ for (i in 1:n_sims){
     colnames(mydata)<-c('Group','Easy1','Hard1','Easy2','Hard2')
     mydata$Group <-as.factor(mydata$Group)  #this is important!
     # You can look at mydata by clicking on its label in the Environment tab
+
+
     #----------------------------------------------------------------------------------------
-    # Save your simulated data as tab-separated text
-    #----------------------------------------------------------------------------------------
-    write.table(mydata, "/users/mje/anova_sim/repro17/mixed_model_eeg_simulation/data/simulated_data.txt", sep=",") 
-    # You could use saved data if you want to double-check against output of Anova from another package
-    # But see comments in script 2: advisable to comment out this line once you've got the idea
-    # And note that on each run, the file will be overwritten with latest output
-    # (Easy to fix by changing the file name on each run, but you don't want your computer
-    # clogged up with loads of unwanted files - though you might like to see if you could
-    # work out how to achieve this, just as an exercise)
-    #----------------------------------------------------------------------------------------
-    # There are various ways of doing ANOVA in R: most require data to be in long form
-    #  For explanation see http://seananderson.ca/2013/10/19/reshape.html
-    #----------------------------------------------------------------------------------------
-    
     mylongdata <- melt(mydata) #converts to long form, with one column with all scores
     mylongdata$Subject <- c(seq(1:(myN*2)),seq(1:(myN*2)),seq(1:(myN*2)),seq(1:(myN*2)))
     # Add a column giving subject ID: this is repeated for each combination of conditions
     
     mylongdata$time <-c(rep(1,myN*2*2),rep(2,myN*2*2)) #adds column giving time
     mylongdata$difficulty <-c(rep(1,myN*2),rep(2,myN*2),rep(1,myN*2),rep(2,myN*2))#adds column giving difficulty
+
     # Note that there are more general ways of reshaping data: this is just simple for this design
     # Look now at longdata by clicking on its name in the Environment tab
-    
+    #----------------------------------------------------------------------------------------
+    # Save your simulated data as tab-separated text
+    #----------------------------------------------------------------------------------------
+    write.table(mylongdata,
+                paste("/users/mje/anova_sim/repro17/mixed_model_eeg_simulation/data/sim_data/simulated_data_",
+                      i, ".csv", sep =""),
+                sep=",") 
     #----------------------------------------------------------------------------------------
     # Now run an ANOVA
     #----------------------------------------------------------------------------------------
@@ -93,48 +88,44 @@ for (i in 1:n_sims){
     sigp<-which(ptable[i,1:7]<.007) #now do the same with p < .007, i.e. .05/7
     if(length(sigp)>0)
     {ptable[i,9]<-1} #result is stored in column 9
+    # fdr correction
+    fdr_tmp <- which(p.adjust(ptable[i, 1:7], method = "fdr")<.05) #find whether any p-values are < .05
+    ifelse(length(fdr_tmp)>0, ptable[i, 10]<-1, ptable[i, 10]<-0)
     
-# The way ptable is populated is a pretty clunky way of doing things, 
-#  but I hope it is reasonably easy to follow
-# This is a much more elegant alternative for lines 83-90
-# suggested by my colleague Paul Thompson:
-# ptable[i,1:7]<-myaov[["Error: Within"]][[1]]$'Pr(>F)'[1:7]
-# ptable[i,8]<-ifelse(any(ptable[i,1:7]<.05)==TRUE,1,0)
-# ptable[i,9]<-ifelse(any(ptable[i,1:7]<.007)==TRUE,1,0)
-
-m1 <- lmer(value ~ -1 + ( 1 | Subject ), data = mylongdata, REML= FALSE)
-m2 <- update(m1, .~. + time)
-m3 <- update(m2, .~. + difficulty)
-m4 <- update(m3, .~. + Group)
-m5 <- update(m4, .~. + time:difficulty)
-m6 <- update(m5, .~. + time:Group)
-m7 <- update(m6, .~. + difficulty:Group)
-m8 <- update(m7, .~. + time:difficulty:Group)
-
-## anova(m1, m2, m3, m4, m5, m6, m7, m8)$`Pr(>Chisq)`
-
-## add results to dt
-mxm_dt[i, 1:7] <- anova(m1, m2, m3, m4, m5, m6, m7, m8)$`Pr(>Chisq)`[2:8]
-
-sigp<-which(mxm_dt[i,1:7]<.05) #find whether any p-values are < .05
-if(length(sigp)>0)
-{mxm_dt[i,8]<-1} # if so, assign a 1 to column 8
-sigp<-which(mxm_dt[i,1:7]<.007) #now do the same with p < .007, i.e. .05/7
-if(length(sigp)>0)
-{mxm_dt[i,9]<-1} #result is stored in column 9
-
-} #repeat for next simulation
-
-mypf<-round(ptable,digits=2) #get rid of extraneous digits; This doesn't always work- not sure why!
-if (n_sims<21){
-    grid.table(mypf) #doing gridtable gets v slow with more than 20 rows
+    ## Change to factor for the MM
+    mylongdata$Group <- factor(mylongdata$Group)
+    mylongdata$time <- factor(mylongdata$time)
+    mylongdata$Subject <- factor(mylongdata$Subject)
+    ## Fit Mixed model
+    m1 <- lmer(value ~ -1 + ( 1 | Subject ), data = mylongdata, REML= FALSE)
+    m2 <- update(m1, .~. + time)
+    m3 <- update(m2, .~. + difficulty)
+    m4 <- update(m3, .~. + Group)
+    m5 <- update(m4, .~. + time:difficulty)
+    m6 <- update(m5, .~. + time:Group)
+    m7 <- update(m6, .~. + difficulty:Group)
+    m8 <- update(m7, .~. + time:difficulty:Group)
+    
+    mxm_dt[i, 1:7] <- anova(m1, m2, m3, m4, m5, m6, m7, m8)$`Pr(>Chisq)`[2:8]
+    # fdr correct 
+    if (length(sigp)>0)
+    {mxm_dt[i,8]<-1} # if so, assign a 1 to column 8
+    sigp<-which(mxm_dt[i,1:7]<.007) #now do the same with p < .007, i.e. .05/7
+    if(length(sigp)>0)
+    {mxm_dt[i,9]<-1} #result is stored in column 9
+    
+    # fdr correction
+    fdr_tmp <- which(p.adjust(mxm_dt[i, 1:7], method = "fdr")<.05) #find whether any p-values are < .05
+    if (length(fdr_tmp)>0)
+    {mxm_dt[i,8]<-1} # if so, assign a 1 to column 8
+    
+    
+    } #repeat for next simulation
+    
+    mypf <- round(ptable,digits=2) #get rid of extraneous digits; This doesn't always work- not sure why!
+    if (n_sims<21){
+        grid.table(mypf) #doing gridtable gets v slow with more than 20 rows
 }
-## percent05<-100*(sum(ptable[,8])/n_sims) 
-## percentBon<-100*(sum(ptable[,9])/n_sims)
-## print(paste('% ANOVAs with one effect or interaction < .05 = ',percent05))
-## print(paste('% ANOVAs with one effect or interaction < .007 = ',percentBon))
-## print(paste('% mixed with one effect or interaction < .05 = ', 100*(sum(mxm_dt[,8])/n_sims)))
-## print(paste('% mixed with one effect or interaction < .007 = ', 100*(sum(mxm_dt[,9])/n_sims)))
 
 # For an explanation of the issues raised by this exercise see:
 # http://deevybee.blogspot.co.uk/2013/06/interpreting-unexpected-significant.html
