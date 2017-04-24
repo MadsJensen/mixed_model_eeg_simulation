@@ -33,7 +33,7 @@ set.seed(183)
 myM <- 0 # Mean score for all variables in the sample - we're using z scores for simplicity
 mySD <- 1 #
 myN <-30 #set sample size per group (You can vary this to see the effect)
-n_sims <- 100 # Specify number of simulated datasets
+n_sims <- 100000 # Specify number of simulated datasets
 # We'll start with simulating 20 datasets, but can later update this number
 ptable=matrix(rep(NA, (n_sims*10)), nrow=n_sims) #initialising a matrix that will hold p values in each run
 table_names <- c("A", "B", "C", "AB", "AC", "BC", "ABC", "anysig", "Bonfsig", "fdr")
